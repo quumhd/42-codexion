@@ -6,164 +6,173 @@
 /*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/24 13:52:05 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/19 18:10:15 by jdreissi         ###   ########.fr       */
+/*   Updated: 2026/07/20 17:10:58 by jdreissi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-void	print_args_struct(t_arguments input_args)
+void	log_message(t_arguments *args, int coder_id, char *message)
 {
-	printf(
-		"number_of_coders: %d\n"
-		"time_to_burnout: %ld\n"
-		"time_to_compile: %ld\n"
-		"time_to_debug: %ld\n"
-		"time_to_refactor: %ld\n"
-		"number_of_compiles_required: %d\n"
-		"dongle_cooldown: %ld\n"
-		"time of day: %ld\n"
-		"scheduler: %d\n",
-		input_args.number_of_coders,
-		input_args.time_to_burnout,
-		input_args.time_to_compile,
-		input_args.time_to_debug,
-		input_args.time_to_refactor,
-		input_args.number_of_compiles_required,
-		input_args.dongle_cooldown,
-		input_args.start_time,
-		input_args.scheduler
-		);
+	long	elapsed_ms;
+
+	pthread_mutex_lock(&args->log_lock);
+	elapsed_ms = get_ms_time() - args->start_time;
+	printf("%ld %d %s\n", elapsed_ms, coder_id, message);
+	pthread_mutex_unlock(&args->log_lock);
 }
 
-t_arguments	parse_arguments(char **argv)
+bool	cooldown_elapsed(t_arguments *args, t_dongle *dongle)
 {
-	struct timeval tv;
-	t_arguments	input_args;
-
-	input_args.number_of_coders = atoi(argv[1]);
-	input_args.time_to_burnout = (long) atoi(argv[2]);
-	input_args.time_to_compile = (long) atoi(argv[3]);
-	input_args.time_to_debug = (long) atoi(argv[4]);
-	input_args.time_to_refactor = (long) atoi(argv[5]);
-	input_args.number_of_compiles_required = atoi(argv[6]);
-	input_args.dongle_cooldown = (long) atoi(argv[7]);
-	if (strcmp(argv[8], "fifo") == 0)
-		input_args.scheduler = FIFO;
-	else if (strcmp(argv[8], "edf") == 0)
-		input_args.scheduler = EDF;
-	else
-		input_args.scheduler = 3;
-	input_args.start_time = get_ms_time();
-	return (input_args);
+	if (dongle->released_at == -1)
+		return (true);
+	if (dongle->released_at + args->dongle_cooldown < get_ms_time())
+		return (true);
+	return (false);
 }
 
-int	check_arguments(t_arguments input_args)
+void	register_waiter(t_coder *coder, t_dongle *dongle)
 {
-	if (input_args.number_of_coders <= 0)
-		return (fprintf (stderr, "Number of coders cannot be zero or negative\n"), -1);
-	if (input_args.time_to_burnout <= 0)
-		return (fprintf (stderr, "Time to burnout cannot be zero or negative\n"), -1);
-	if (input_args.time_to_compile <= 0)
-		return (fprintf (stderr, "Time to compile cannot be zero or negative\n"), -1);
-	if (input_args.time_to_debug <= 0)
-		return (fprintf (stderr, "Time to debug cannot be zero or negative\n"), -1);
-	if (input_args.time_to_refactor <= 0)
-		return (fprintf (stderr, "Time to refactor cannot be zero or negative\n"), -1);
-	if (input_args.number_of_compiles_required <= 0)
-		return (fprintf (stderr, "Number of compiles required coders cannot be zero or negative\n"), -1);
-	if (input_args.dongle_cooldown <= 0)
-		return (fprintf (stderr, "Dongle cooldown cannot be zero or negative\n"), -1);
-	if (input_args.scheduler == 3)
-		return (fprintf (stderr, "Scheduler can only be \"fifo\" or \"edf\"\n"), -1);
-	return (0);
-}
-
-int init_dongles(t_arguments *args)
-{
-	int	dongle_id;
-
-	dongle_id = 0;
-	args->dongles = malloc(sizeof(t_dongle) * args->number_of_coders);
-	if (!args->dongles)
-		return (-1);
-	while (dongle_id < args->number_of_coders)
-	{
-		args->dongles[dongle_id].id = dongle_id + 1;
-		args->dongles[dongle_id].in_use = 0;
-		args->dongles[dongle_id].released_at = -1;
-		if (pthread_mutex_init(&args->dongles[dongle_id].lock, NULL) != 0)
-			return (-1);
-		if (pthread_cond_init(&args->dongles[dongle_id].cond, NULL) != 0)
-			return (-1);
-		dongle_id++;
-	}
-	return (0);
-}
-
-void	distribute_dongles(t_arguments *args)
-{
-	int i;
-	int noc;
+	int	i;
 
 	i = 0;
-	noc = args->number_of_coders;
-	while (i < noc)
+	while (i < 2)
 	{
-		if (noc == 1)
+		if (dongle->queue[i].active == false)
 		{
-			args->coders[0].right = &args->dongles[0];
-			args->coders[0].left = &args->dongles[0];
-		}
-		else
-		{
-            args->coders[i].right = &args->dongles[i];
-			if (i != 0)
-				args->coders[i].left = &args->dongles[i - 1];
-			else
-				args->coders[i].left = &args->dongles[noc - 1];
+			dongle->queue[i].coder_id = coder->id;
+			dongle->queue[i].arrival_time = get_ms_time();
+			dongle->queue[i].deadline = coder->last_compile_start
+				+ coder->arguments->time_to_burnout;
+			dongle->queue[i].active = true;
+			return ;
 		}
 		i++;
 	}
 }
 
-int	init_coders(t_arguments *args)
+void	unregister_waiter(t_dongle *dongle, int coder_id)
 {
-	int	coder_id;
+	int	i;
 
-	coder_id = 0;
-	args->coders = malloc(sizeof(t_coder) * args->number_of_coders);
-	if (!args->coders)
-		return (-1);
-	while (coder_id < args->number_of_coders)
+	i = 0;
+	while (i < 2)
 	{
-		args->coders[coder_id].id = coder_id + 1;
-		args->coders[coder_id].last_compile_start = get_ms_time();
-		args->coders[coder_id].number_of_finished_compiles = 0;
-		args->coders[coder_id].arguments = args;
-		if (pthread_mutex_init(&args->coders[coder_id].lock, NULL) != 0)
-			return (-1);
-		coder_id++;
+		if (dongle->queue[i].coder_id == coder_id)
+			dongle->queue[i].active = false;
+		i++;
 	}
-	return (0);
+}
+
+
+int	get_next_coder_id(t_arguments *args, t_dongle *dongle)
+{
+	int		i;
+	int		best_id;
+	long	best_key;
+	long	current_key;
+
+	i = 0;
+	best_key = -1;
+	while (i < 2)
+	{
+		if (dongle->queue[i].active == true)
+		{
+			if (args->scheduler == FIFO)
+				current_key = dongle->queue[i].arrival_time;
+			else
+				current_key = dongle->queue[i].deadline;
+			if (best_key == -1 || current_key < best_key)
+			{
+				best_key = current_key;
+				best_id = dongle->queue[i].coder_id;
+			}
+		}
+		i++;
+	}
+	return (best_id);
+}
+
+
+void	helper_pick_up_dongle(t_coder *coder, t_dongle *dongle)
+{
+	t_arguments *args;
+
+	args = coder->arguments;
+	pthread_mutex_lock(&dongle->lock);
+	register_waiter(coder, dongle);
+	while(dongle->in_use
+		|| !cooldown_elapsed(coder->arguments, dongle)
+		|| get_next_coder_id(args, dongle) != coder->id)
+		pthread_cond_wait(&dongle->cond, &dongle->lock);
+	unregister_waiter(dongle, coder->id);
+	dongle->in_use = 1;
+	pthread_mutex_unlock(&dongle->lock);
+	log_message(coder->arguments, coder->id, "has taken a dongle");
+}
+
+void	pick_up_dongle(t_coder *coder)
+{
+	t_dongle	*first;
+	t_dongle	*second;
+	if (coder->id % 2 == 0)
+	{
+		first = coder->left;
+		second = coder->right;
+	}
+	else
+	{
+		first = coder->right;
+		second = coder->left;
+	}
+	helper_pick_up_dongle(coder, first);
+	if (first == second)
+		return ;
+	helper_pick_up_dongle(coder, second);
+}
+
+
+void	*coder_routine(void *arg)
+{
+	t_coder		*coder;
+	t_arguments	*arguments;
+
+	coder = (t_coder *) arg;
+	arguments = coder->arguments;
+	pick_up_dongle(coder);
+	return NULL;
 }
 
 int	main(int argc, char **argv)
 {
-	t_arguments	*args;
+	t_arguments	args;
 
-
+	pthread_mutex_init(&args.log_lock, NULL);
+	pthread_mutex_init(&args.stop_lock, NULL);
 	if (argc != 9)
 		return (fprintf(stderr, "Wrong input\n"), 1);
-	args = malloc(sizeof(t_arguments));
-	*args = parse_arguments(argv);
-	if (check_arguments(*args) == -1)
+	args = parse_arguments(argv);
+	if (check_arguments(args) == -1)
 		return (1);
-	if (init_dongles(args) == -1)
+	if (init_dongles(&args) == -1)
 		return (1);
-	if (init_coders(args) == -1)
+	if (init_coders(&args) == -1)
 		return (1);
-	distribute_dongles(args);
-	print_args_struct(*args);
+	distribute_dongles(&args);
+	print_args_struct(args);
+	int	i;
+	i = 0;
+	while (i < args.number_of_coders)
+	{
+	    if (pthread_create(&args.coders[i].thread, NULL, coder_routine, &args.coders[i]) != 0)
+	        return (1);
+	    i++;
+	}
+	i = 0;
+	while (i < args.number_of_coders)
+	{
+	    pthread_join(args.coders[i].thread, NULL);
+	    i++;
+	}
 	return (0);
 }
