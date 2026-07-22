@@ -1,18 +1,8 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   codexion.h                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/24 13:54:20 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/20 16:30:59 by jdreissi         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
+#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <sys/time.h>
@@ -24,20 +14,20 @@ typedef struct s_coder t_coder;
 typedef struct s_dongle t_dongle;
 
 typedef struct  s_arguments {
-    int         number_of_coders;
-    long        time_to_burnout;
-    long        time_to_compile;
-    long        time_to_debug;
-    long        time_to_refactor;
-    int         number_of_compiles_required;
-    long        dongle_cooldown;
-    int         scheduler;
+    int             number_of_coders;
+    long            time_to_burnout;
+    long            time_to_compile;
+    long            time_to_debug;
+    long            time_to_refactor;
+    int             number_of_compiles_required;
+    long            dongle_cooldown;
+    int             scheduler;
 
-    long         start_time;
-    t_coder     *coders;
-    t_dongle    *dongles;
+    long             start_time;
+    t_coder         *coders;
+    t_dongle        *dongles;
 
-    int         stop;
+    bool            stop;
     pthread_mutex_t stop_lock;
     pthread_mutex_t log_lock;
 }   t_arguments;
@@ -51,7 +41,7 @@ typedef struct  s_queue {
 
 typedef struct  s_dongle {
     int             id;
-    int             in_use;
+    bool            in_use;
     long            released_at;
     pthread_mutex_t lock;
     pthread_cond_t  cond;
@@ -78,7 +68,6 @@ int	        check_arguments(t_arguments input_args);
 void	    print_args_struct(t_arguments input_args);
 
 
-int	init_coders(t_arguments *args);
-int init_dongles(t_arguments *args);
-void	distribute_dongles(t_arguments *args);
-
+int         init_coders(t_arguments *args);
+int         init_dongles(t_arguments *args);
+void	    distribute_dongles(t_arguments *args);

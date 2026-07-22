@@ -1,14 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/06/24 13:52:05 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/20 17:10:58 by jdreissi         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
 
 #include "codexion.h"
 
@@ -58,8 +47,11 @@ void	unregister_waiter(t_dongle *dongle, int coder_id)
 	i = 0;
 	while (i < 2)
 	{
-		if (dongle->queue[i].coder_id == coder_id)
+		if (dongle->queue[i].active && dongle->queue[i].coder_id == coder_id)
+		{
 			dongle->queue[i].active = false;
+			return ;
+		}
 		i++;
 	}
 }
@@ -73,6 +65,7 @@ int	get_next_coder_id(t_arguments *args, t_dongle *dongle)
 	long	current_key;
 
 	i = 0;
+	best_id = -1;
 	best_key = -1;
 	while (i < 2)
 	{
@@ -106,7 +99,7 @@ void	helper_pick_up_dongle(t_coder *coder, t_dongle *dongle)
 		|| get_next_coder_id(args, dongle) != coder->id)
 		pthread_cond_wait(&dongle->cond, &dongle->lock);
 	unregister_waiter(dongle, coder->id);
-	dongle->in_use = 1;
+	dongle->in_use = true;
 	pthread_mutex_unlock(&dongle->lock);
 	log_message(coder->arguments, coder->id, "has taken a dongle");
 }
@@ -131,6 +124,60 @@ void	pick_up_dongle(t_coder *coder)
 	helper_pick_up_dongle(coder, second);
 }
 
+void	put_dongles_down(t_coder *coder)
+{
+	pthread_mutex_lock(&coder->left->lock);
+	coder->left->in_use = false;
+	coder->left->released_at = get_ms_time();
+	pthread_cond_broadcast(&coder->left->cond);
+	pthread_mutex_unlock(&coder->left->lock);
+
+	if (coder->left == coder->right)
+		return ;
+
+	pthread_mutex_lock(&coder->right->lock);
+	coder->right->in_use = false;
+	coder->right->released_at = get_ms_time();
+	pthread_cond_broadcast(&coder->right->cond);
+	pthread_mutex_unlock(&coder->right->lock);
+}
+
+void	coder_compile(t_coder *coder)
+{
+	pthread_mutex_lock(&coder->lock);
+	coder->last_compile_start = get_ms_time();
+	pthread_mutex_unlock(&coder->lock);
+
+	log_message(coder->arguments, coder->id, "is compiling");
+	usleep(coder->arguments->time_to_compile * 1000);
+
+	pthread_mutex_lock(&coder->lock);
+	coder->number_of_finished_compiles++;
+	pthread_mutex_unlock(&coder->lock);
+}
+
+void	coder_debugg(t_coder *coder)
+{
+	log_message(coder->arguments, coder->id, "is debugging");
+	usleep(coder->arguments->time_to_debug * 1000);
+}
+
+void	coder_refactor(t_coder *coder)
+{
+	log_message(coder->arguments, coder->id, "is refactoring");
+	usleep(coder->arguments->time_to_refactor * 1000);
+}
+
+bool	has_to_stop(t_arguments *args)
+{
+	bool	stop;
+
+	pthread_mutex_lock(&args->stop_lock);
+	stop = args->stop;
+	pthread_mutex_unlock(&args->stop_lock);
+	return (stop);
+}
+
 
 void	*coder_routine(void *arg)
 {
@@ -139,19 +186,102 @@ void	*coder_routine(void *arg)
 
 	coder = (t_coder *) arg;
 	arguments = coder->arguments;
-	pick_up_dongle(coder);
+	while (has_to_stop(arguments) == false)
+	{
+		pick_up_dongle(coder);
+		coder_compile(coder);
+		put_dongles_down(coder);
+		coder_debugg(coder);
+		coder_refactor(coder);
+	}
 	return NULL;
+}
+
+void	*wake_up_routine(void *args)
+{
+	int         i;
+	t_arguments	*arguments;
+
+	i = 0;
+	arguments = (t_arguments *) args;
+	while (has_to_stop(arguments) == false)
+	{
+		while (i < arguments->number_of_coders)
+		{
+			pthread_mutex_lock(&arguments->dongles[i].lock);
+			if (arguments->dongles[i].in_use == false)
+			{
+				if (cooldown_elapsed(arguments, &arguments->dongles[i]) == true)
+				{
+					pthread_cond_broadcast(&arguments->dongles[i].cond);
+				}
+			}
+			pthread_mutex_unlock(&arguments->dongles[i].lock);
+			i++;
+		}
+		usleep(1000);
+		i = 0;
+	}
+	return (NULL);
+}
+
+void	*monitoring_routine(void *args)
+{
+	int			i;
+	t_coder		*coders;
+	t_arguments	*arguments;
+	int			total_compiles;
+	long		time_since_last_compile;
+
+	i = 0;
+	total_compiles = 0;
+	arguments = (t_arguments *) args;
+	coders = arguments->coders;
+	while (true)
+	{
+		while (i < arguments->number_of_coders)
+		{
+			pthread_mutex_lock(&arguments->coders[i].lock);
+			time_since_last_compile = get_ms_time() - coders[i].last_compile_start;
+			if (time_since_last_compile > arguments->time_to_burnout)
+			{
+				log_message(arguments, coders[i].id, "has burned out");
+				pthread_mutex_lock(&arguments->stop_lock);
+				arguments->stop = true;
+				pthread_mutex_unlock(&arguments->stop_lock);
+				pthread_mutex_unlock(&arguments->coders[i].lock);
+				return (NULL);
+			}
+			total_compiles += coders[i].number_of_finished_compiles;
+			pthread_mutex_unlock(&arguments->coders[i].lock);
+			i++;
+		}
+		if (total_compiles >= arguments->number_of_compiles_required)
+		{
+			pthread_mutex_lock(&arguments->stop_lock);
+			arguments->stop = true;
+			pthread_mutex_unlock(&arguments->stop_lock);
+			return (NULL);
+		}
+		total_compiles = 0;
+		usleep(1000);
+		i = 0;
+	}
+	return (NULL);
 }
 
 int	main(int argc, char **argv)
 {
+	int	i;
 	t_arguments	args;
+	pthread_t	wake_up_thread;
+	pthread_t   monitoring_thread;
 
-	pthread_mutex_init(&args.log_lock, NULL);
-	pthread_mutex_init(&args.stop_lock, NULL);
 	if (argc != 9)
 		return (fprintf(stderr, "Wrong input\n"), 1);
 	args = parse_arguments(argv);
+	pthread_mutex_init(&args.log_lock, NULL);
+	pthread_mutex_init(&args.stop_lock, NULL);
 	if (check_arguments(args) == -1)
 		return (1);
 	if (init_dongles(&args) == -1)
@@ -160,8 +290,11 @@ int	main(int argc, char **argv)
 		return (1);
 	distribute_dongles(&args);
 	print_args_struct(args);
-	int	i;
 	i = 0;
+	if (pthread_create(&wake_up_thread, NULL, wake_up_routine, &args) != 0)
+		return (1);
+	if (pthread_create(&monitoring_thread, NULL, monitoring_routine, &args) != 0)
+		return (1);
 	while (i < args.number_of_coders)
 	{
 	    if (pthread_create(&args.coders[i].thread, NULL, coder_routine, &args.coders[i]) != 0)
@@ -174,5 +307,7 @@ int	main(int argc, char **argv)
 	    pthread_join(args.coders[i].thread, NULL);
 	    i++;
 	}
+	pthread_join(wake_up_thread, NULL);
+	pthread_join(monitoring_thread, NULL);
 	return (0);
 }
