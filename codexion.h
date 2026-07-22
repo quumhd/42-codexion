@@ -1,3 +1,14 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   codexion.h                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/07/22 17:11:05 by jdreissi          #+#    #+#             */
+/*   Updated: 2026/07/22 17:25:00 by jdreissi         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -61,13 +72,32 @@ typedef struct  s_coder {
 
 
 
+void	    pick_up_dongle(t_coder *coder);
+void	    put_dongles_down(t_coder *coder);
+void	    coder_compile(t_coder *coder);
+void	    coder_debugg(t_coder *coder);
+void	    coder_refactor(t_coder *coder);
 
-long        get_ms_time();
+void	    wake_up_all(t_arguments *args);
+void	    *wake_up_routine(void *args);
+void	    *monitoring_routine(void *args);
+
+long        get_ms_time(); bool        has_to_stop(t_arguments *args);
+bool        cooldown_elapsed(t_arguments *args, t_dongle *dongle);
+void	    helper_pick_up_dongle(t_coder *coder, t_dongle *dongle);
+void        log_message(t_arguments *args, int coder_id, char *message);
+
 t_arguments	parse_arguments(char **argv);
 int	        check_arguments(t_arguments input_args);
 void	    print_args_struct(t_arguments input_args);
 
-
 int         init_coders(t_arguments *args);
 int         init_dongles(t_arguments *args);
 void	    distribute_dongles(t_arguments *args);
+
+void	    *wake_up_routine(void *args);
+void	    *monitoring_routine(void *args);
+
+void	    register_waiter(t_coder *coder, t_dongle *dongle);
+void	    unregister_waiter(t_dongle *dongle, int coder_id);
+int	        get_next_coder_id(t_arguments *args, t_dongle *dongle);

@@ -1,29 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   parsing.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/07/22 17:10:34 by jdreissi          #+#    #+#             */
+/*   Updated: 2026/07/22 17:10:46 by jdreissi         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "codexion.h"
-
-void	print_args_struct(t_arguments input_args)
-{
-	printf(
-		"number_of_coders: %d\n"
-		"time_to_burnout: %ld\n"
-		"time_to_compile: %ld\n"
-		"time_to_debug: %ld\n"
-		"time_to_refactor: %ld\n"
-		"number_of_compiles_required: %d\n"
-		"dongle_cooldown: %ld\n"
-		"time of day: %ld\n"
-		"scheduler: %d\n",
-		input_args.number_of_coders,
-		input_args.time_to_burnout,
-		input_args.time_to_compile,
-		input_args.time_to_debug,
-		input_args.time_to_refactor,
-		input_args.number_of_compiles_required,
-		input_args.dongle_cooldown,
-		input_args.start_time,
-		input_args.scheduler
-		);
-}
 
 t_arguments	parse_arguments(char **argv)
 {
