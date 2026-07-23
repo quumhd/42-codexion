@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   codexion.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/22 17:10:23 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/23 14:24:59 by jdreissi         ###   ########.fr       */
+/*   Updated: 2026/07/23 15:19:33 by jdreissi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,12 +62,14 @@ void	*coder_routine(void *arg)
 	while (has_to_stop(arguments) == false)
 	{
 		pick_up_dongle(coder);
-		if (has_to_stop(arguments) == true)
-			break ;
-		coder_compile(coder);
-		put_dongles_down(coder);
-		coder_debugg(coder);
-		coder_refactor(coder);
+		if (has_to_stop(arguments) == false)
+			coder_compile(coder);
+		if (has_to_stop(arguments) == false)
+			put_dongles_down(coder);
+		if (has_to_stop(arguments) == false)
+			coder_debugg(coder);
+		if (has_to_stop(arguments) == false)
+			coder_refactor(coder);
 	}
 	return (NULL);
 }
