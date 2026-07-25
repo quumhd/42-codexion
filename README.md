@@ -42,7 +42,7 @@ Example:
   `pthread_mutex_t`, and `pthread_cond_t`.
 - `man` pages for `pthread_mutex_init`, `pthread_cond_wait`,
   `pthread_cond_timedwait`, `pthread_cond_broadcast`, `gettimeofday`.
-- Wikipedia — [Dining Philosophers problem](https://en.wikipedia.org/wiki/Dining_philosophers_problem), [Coffman's conditions for deadlock](https://en.wikipedia.org/wiki/Deadlock_(computer_science)),
+- Wikipedia - [Dining Philosophers problem](https://en.wikipedia.org/wiki/Dining_philosophers_problem), [Coffman's conditions for deadlock](https://en.wikipedia.org/wiki/Deadlock_(computer_science)),
   [Earliest Deadline First scheduling](https://en.wikipedia.org/wiki/Earliest_deadline_first_scheduling).
 - AI was used throughout development as a learning resource:
   - get an ovwerview of the project
