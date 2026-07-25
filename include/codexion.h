@@ -42,6 +42,9 @@ typedef struct s_arguments
 	t_coder			*coders;
 	t_dongle		*dongles;
 
+	pthread_t		wake_up_thread;
+	pthread_t		monitoring_thread;
+
 	bool			stop;
 	pthread_mutex_t	stop_lock;
 	pthread_mutex_t	log_lock;
@@ -79,6 +82,9 @@ typedef struct s_coder
 
 int			start_coders(t_arguments *args);
 void		*coder_routine(void *arg);
+
+int			start_monitoring(t_arguments *args);
+int			start_coders(t_arguments *args);
 
 void		pick_up_dongle(t_coder *coder);
 void		put_dongles_down(t_coder *coder);

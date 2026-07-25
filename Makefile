@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: replace <replace@student.42heilbronn.de    +#+  +:+       +#+         #
+#    By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2026/07/23 14:42:36 by replace           #+#    #+#              #
-#    Updated: 2026/07/23 15:05:50 by jdreissi         ###   ########.fr        #
+#    Created: 2026/07/23 14:42:36 by jdreissi          #+#    #+#              #
+#    Updated: 2026/07/25 11:36:54 by jdreissi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,6 +27,7 @@ SRCS = $(SRCS_DIR)/codexion.c \
 	   $(SRCS_DIR)/monitoring_routine.c \
 	   $(SRCS_DIR)/parsing.c \
 	   $(SRCS_DIR)/select_order.c \
+	   $(SRCS_DIR)/manage_threads.c \
 
 O_FILES = $(SRCS:.c=.o)
 

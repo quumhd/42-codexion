@@ -6,7 +6,7 @@
 /*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/22 17:11:53 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/23 13:25:18 by jdreissi         ###   ########.fr       */
+/*   Updated: 2026/07/25 12:57:22 by jdreissi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,18 +61,18 @@ bool	burnout(t_arguments *arguments)
 	i = 0;
 	coders = arguments->coders;
 	time_since_last_compile = 0;
-	pthread_mutex_lock(&arguments->coders[i].lock);
-	time_since_last_compile = get_ms_time() - coders[i].last_compile_start;
-	pthread_mutex_unlock(&arguments->coders[i].lock);
 	while (i < arguments->number_of_coders)
 	{
+		pthread_mutex_lock(&arguments->coders[i].lock);
+		time_since_last_compile = get_ms_time() - coders[i].last_compile_start;
+		pthread_mutex_unlock(&arguments->coders[i].lock);
 		if (time_since_last_compile > arguments->time_to_burnout)
 		{
-			log_message(arguments, coders[i].id, "has burned out");
 			pthread_mutex_lock(&arguments->stop_lock);
+			log_message(arguments, coders[i].id, "burned out");
 			arguments->stop = true;
-			wake_up_all(arguments);
 			pthread_mutex_unlock(&arguments->stop_lock);
+			wake_up_all(arguments);
 			return (true);
 		}
 		i++;
