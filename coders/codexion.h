@@ -1,13 +1,13 @@
 /* ************************************************************************** */
-/*																			*/
-/*														:::	  ::::::::   */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
 /*   codexion.h                                         :+:      :+:    :+:   */
-/*													+:+ +:+		 +:+	 */
-/*   By: jdreissi <jdreissi@student.42.fr>		  +#+  +:+	   +#+		*/
-/*												+#+#+#+#+#+   +#+		   */
-/*   Created: 2026/07/22 17:11:05 by jdreissi		  #+#	#+#			 */
-/*   Updated: 2026/07/23 14:50:28 by jdreissi         ###   ########.fr       */
-/*																			*/
+/*                                                    +:+ +:+         +:+     */
+/*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/10/08 10:31:22 by jdreissi          #+#    #+#             */
+/*   Updated: 2026/10/08 10:31:31 by jdreissi         ###   ########.fr       */
+/*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CODEXION_H
@@ -104,7 +104,6 @@ void		log_message(t_arguments *args, int coder_id, char *message);
 
 t_arguments	parse_arguments(char **argv);
 int			check_arguments(t_arguments input_args);
-void		print_args_struct(t_arguments input_args);
 
 int			init_coders(t_arguments *args);
 int			init_dongles(t_arguments *args);

@@ -6,7 +6,7 @@
 /*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/22 17:11:53 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/25 12:57:22 by jdreissi         ###   ########.fr       */
+/*   Updated: 2026/10/08 10:59:24 by jdreissi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,8 +101,8 @@ bool	reached_compile_goal(t_arguments *arguments, t_coder *coders)
 	{
 		pthread_mutex_lock(&arguments->stop_lock);
 		arguments->stop = true;
-		wake_up_all(arguments);
 		pthread_mutex_unlock(&arguments->stop_lock);
+		wake_up_all(arguments);
 		return (true);
 	}
 	return (false);

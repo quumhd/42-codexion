@@ -6,7 +6,7 @@
 #    By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/07/23 14:42:36 by jdreissi          #+#    #+#              #
-#    Updated: 2026/07/25 11:36:54 by jdreissi         ###   ########.fr        #
+#    Updated: 2026/10/08 10:30:21 by jdreissi         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,11 +14,12 @@ NAME = codexion
 
 CC = cc
 
-CFLAGS = -Wall -Wextra -Werror -Iinclude -pthread
+CFLAGS = -Wall -Wextra -Werror -pthread
 
-HEADER = codexion.h
 
-SRCS_DIR = srcs
+SRCS_DIR = coders
+
+HEADER = $(SRCS_DIR)/codexion.h
 
 SRCS = $(SRCS_DIR)/codexion.c \
 	   $(SRCS_DIR)/coder_actions.c \

@@ -6,17 +6,17 @@
 /*   By: jdreissi <jdreissi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/22 17:10:23 by jdreissi          #+#    #+#             */
-/*   Updated: 2026/07/25 12:55:09 by jdreissi         ###   ########.fr       */
+/*   Updated: 2026/10/08 11:07:32 by jdreissi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "codexion.h"
 
-#define  A1 "Arguments required: "
-#define  A2 "<number_of_coders> <time_to_burnout> "
-#define  A3 "<time_to_compile> <time_to_debug "
-#define  A4 "<time_to_refactor <number_of_compile_required> "
-#define  A5 "<dongle_cooldown> <scheduler>\n"
+#define A1 "Arguments required: "
+#define A2 "<number_of_coders> <time_to_burnout> "
+#define A3 "<time_to_compile> <time_to_debug> "
+#define A4 "<time_to_refactor> <number_of_compile_required> "
+#define A5 "<dongle_cooldown> <scheduler>\n"
 
 void	join_coders(t_arguments *args)
 {
@@ -90,7 +90,7 @@ int	main(int argc, char **argv)
 	distribute_dongles(&args);
 	if (start_monitoring(&args) == -1
 		|| start_coders(&args) == -1)
-		return (free_all(&args),1);
+		return (free_all(&args), 1);
 	join_coders(&args);
 	free_all(&args);
 	return (0);
